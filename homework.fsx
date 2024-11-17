@@ -50,12 +50,14 @@ let rec parseScore (chars: char list): int option list =
     let rec helper prevScore chars =
         match chars, prevScore with
         | [], _ -> []
-        | 'X' :: tail, _ -> Some 10 :: helper None tail
-        | '/' :: tail, Some p -> Some (10 - p) :: helper None tail
-        | '-' :: tail, _ -> Some 0 :: helper (Some 0) tail
-        | Digit d :: tail, _ -> Some d :: helper (Some d) tail
-        | _ :: tail, _  //Invalid iputs
-        |'/' :: tail, None 
+        | Strike :: tail, _ -> Some 10 :: helper None tail
+        | Spare :: tail, Some p -> Some (10 - p) :: helper None tail
+        | Miss :: tail, Some p -> Some 0 :: helper None tail
+        | Miss :: tail, None -> Some 0 :: helper (Some 0) tail
+        | Digit d :: tail, Some p -> Some d :: helper None tail
+        | Digit d :: tail, None -> Some d :: helper (Some d) tail
+        | Invalid :: tail, _  //Invalid iputs
+        | Spare :: tail, None 
           -> None :: helper None tail
     helper None chars
 
@@ -195,7 +197,7 @@ let ``homework 1`` =
       "5/5/5/5/5/5/5/5/5/5/5"
       "5/5/5/5/5/5/5/5/5/5/X"
       "X9/5/72XXX9-8/9/X"
-      "X4/2-" ]
+      "X44/2-" ]
     |> List.map bowlingScore
 
 //** #### Value of ``homework 1`` *)
@@ -210,11 +212,41 @@ SHOW ``homework 1``
 //###Write new, **tail-recursive** versions of `parseScore` and `countScore`.
 //###Implement `bowlingScoreTail` to use those 2 new functions
 
-let rec parseScoreTail (chars: char list) (acc: int option list): int option list = []
 
-let rec countScoreTail (scores: int list) (acc: int): int = 0
+let rec parseScoreTail (chars: char list) (acc: int option list): int option list =
+    let rec helper prevScore chars acc =
+        match chars, prevScore with
+        | [], _ -> List.rev acc
+        | Strike :: tail, _ -> helper None tail (Some 10 :: acc)
+        | Spare :: tail, Some p -> helper None tail (Some (10 - p) :: acc)
+        | Miss :: tail, Some p -> helper None tail (Some 0 :: acc)
+        | Miss :: tail, None -> helper (Some 0) tail (Some 0 :: acc)
+        | Digit d :: tail, Some p -> helper None tail (Some d :: acc)
+        | Digit d :: tail, None -> helper (Some d) tail (Some d :: acc)
+        | Invalid :: tail, _  //Invalid iputs
+        | Spare :: tail, None 
+          -> helper None tail (None :: acc)
+    helper None chars acc
+    
+let rec countScoreTail (scores: int list) (acc: int): int =
+    let rec helper scores acc frameCount =
+        match scores, frameCount with
+        | [], _ -> acc
+        | _, 10 -> acc
+        | x :: y :: z :: rest, _ when x = 10 -> // Strike
+            helper (y :: z :: rest) (acc + 10 + y + z) (frameCount + 1)
+        | x :: y :: z :: rest, _ when x + y = 10 -> // Spare
+            helper (z :: rest) (acc + 10 + z) (frameCount + 1)
+        | x :: y :: rest, _ -> // Normal frame
+            helper rest (acc + x + y) (frameCount + 1)
+        | _ -> acc
+    helper scores acc 0
 
-let bowlingScoreTail (score: string): int option = Some 0
+let bowlingScoreTail (score: string): int option =
+    let chars = score.ToCharArray() |> List.ofArray
+    match parseScoreTail chars [] |> sequenceOpts with
+    | Some scores -> Some(countScoreTail scores 0)
+    | None -> None
 
 let ``homework 2`` =     
     [ "XXXXXXXXXXXX"
@@ -226,7 +258,8 @@ let ``homework 2`` =
       "9-9-9-9-9-9-9-9-9-XXX"
       "5/5/5/5/5/5/5/5/5/5/5"
       "5/5/5/5/5/5/5/5/5/5/X"
-      "X9/5/72XXX9-8/9/X" ]
+      "X9/5/72XXX9-8/9/X"
+      "X44/2-" ]
     |> List.map bowlingScoreTail 
 //** #### Value of ``homework 2`` *)
 SHOW ``homework 2``
@@ -236,8 +269,13 @@ SHOW ``homework 2``
 //   Some 90; Some 111; Some 150; Some 155; Some 187]
 
 //////////////////////////////////////////////////////////////
-/// Indeks:
-/// Imię:
-/// Nazwisko:
+/// Indeks: 184306
+/// Imię: Łukasz
+/// Nazwisko: Smoliński
 /// 
 /// Podsumowanie zalizowanych zadan:
+/// 1.4 zrobione
+/// 3.x zrobione
+/// homework1 zrobione
+/// homework2 zrobione
+/// dodatkowe nie zrobione
