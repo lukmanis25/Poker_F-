@@ -66,14 +66,14 @@ SHOW ``exercise 1.3``
 //#### --------------- Your code goes below --------------- *)
 let rec insertBST (value: int) (tree: Tree): Tree =
     match tree with
-    | Empty -> Node(value, Empty, Empty) // Insert at empty position
+    | Empty -> Node(value, Empty, Empty)
     | Node(v, left, right) ->
         if value < v then
-            Node(v, insertBST value left, right) // Go to the left subtree
+            Node(v, insertBST value left, right)
         elif value > v then
-            Node(v, left, insertBST value right) // Go to the right subtree
+            Node(v, left, insertBST value right)
         else
-            tree // Value already exists, no changes
+            tree 
 
 let ``exercise 1.4`` = insertBST 5 tree |> collectInOrder
 //** #### Value of ``exercise 1.4`` *)
